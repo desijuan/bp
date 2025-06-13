@@ -7,29 +7,21 @@ pub const BencodeType = enum(u2) {
     dict,
 };
 
-pub const Int = struct {
-    pub const bencode_type: BencodeType = .int;
-    pub const value_type: type = u32;
-};
+inline fn ParsedValue(comptime tag: BencodeType, comptime T: type) type {
+    return struct {
+        pub const bencode_type = tag;
+        pub const value_type = T;
+    };
+}
 
-pub const String = struct {
-    pub const bencode_type: BencodeType = .string;
-    pub const value_type: type = []const u8;
-};
-
-pub const Dict = struct {
-    pub const bencode_type: BencodeType = .dict;
-    pub const value_type: type = []const u8;
-};
-
-pub const List = struct {
-    pub const bencode_type: BencodeType = .list;
-    pub const value_type: type = []const u8;
-};
+pub const Int = ParsedValue(.int, u32);
+pub const String = ParsedValue(.string, []const u8);
+pub const List = ParsedValue(.list, []const u8);
+pub const Dict = ParsedValue(.dict, []const u8);
 
 pub fn Dto(comptime T: type) type {
     const struct_info = @typeInfo(T).@"struct";
-    var fields: [struct_info.fields.len]std.builtin.Type.StructField = undefined;
+    comptime var fields: [struct_info.fields.len]std.builtin.Type.StructField = undefined;
     for (struct_info.fields, 0..) |field, i| {
         const FieldType: type = @field(field.type, "value_type");
         fields[i] = std.builtin.Type.StructField{
