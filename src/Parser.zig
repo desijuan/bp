@@ -2,10 +2,10 @@ const std = @import("std");
 
 pub const ParseError = std.fmt.ParseIntError;
 
-const Self = @This();
-
 buf: []const u8,
 i: usize,
+
+const Self = @This();
 
 pub fn init(buffer: []const u8) Self {
     return Self{
