@@ -108,7 +108,7 @@ pub fn parseDict(
 
         inline for (@typeInfo(Info).@"struct".fields) |field|
             if (std.mem.eql(u8, field.name, key)) {
-                @field(dto, field.name) = switch (field.type.bencode_type) {
+                @field(dto, field.name) = switch (comptime field.type.bencode_type) {
                     .int => try self.parseInt(),
                     .string => try self.parseStr(),
                     .list => try self.parseListAsStr(),

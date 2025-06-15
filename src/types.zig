@@ -7,17 +7,17 @@ pub const BencodeType = enum(u2) {
     dict,
 };
 
-inline fn ParsedValue(comptime tag: BencodeType, comptime T: type) type {
-    return struct {
-        pub const bencode_type = tag;
-        pub const value_type = T;
+inline fn BpType(comptime tag: BencodeType, comptime T: type) type {
+    comptime return struct {
+        pub const bencode_type: BencodeType = tag;
+        pub const value_type: type = T;
     };
 }
 
-pub const Int = ParsedValue(.int, u32);
-pub const String = ParsedValue(.string, []const u8);
-pub const List = ParsedValue(.list, []const u8);
-pub const Dict = ParsedValue(.dict, []const u8);
+pub const Int = BpType(.int, u32);
+pub const String = BpType(.string, []const u8);
+pub const List = BpType(.list, []const u8);
+pub const Dict = BpType(.dict, []const u8);
 
 pub fn Dto(comptime T: type) type {
     const struct_info = @typeInfo(T).@"struct";

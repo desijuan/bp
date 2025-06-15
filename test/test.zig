@@ -3,53 +3,47 @@ const std = @import("std");
 const bp = @import("bp");
 const Parser = bp.Parser;
 
-const data = @import("data.zig");
+pub const TorrentFileInfo = struct {
+    @"creation date": bp.Int,
+    announce: bp.String,
+    comment: bp.String,
+    @"created by": bp.String,
+    info: bp.Dict,
+    @"url-list": bp.List,
+};
 
-const TorrentFileInfo: type = data.TorrentFileInfo;
-const TorrentFile: type = bp.Dto(TorrentFileInfo);
-
-const TorrentInfo: type = data.TorrentInfo;
-const Torrent: type = bp.Dto(TorrentInfo);
+pub const TorrentInfo = struct {
+    length: bp.Int,
+    @"piece length": bp.Int,
+    name: bp.String,
+    pieces: bp.String,
+};
 
 const testing = std.testing;
 
 test "parse debian torrent" {
     const da = testing.allocator;
 
+    // zig fmt: off
     const file_buffer: []const u8 = try @import("utils.zig").readFile(
-        da,
-        "test/debian-12.9.0-amd64-netinst.iso.torrent",
-    );
-    defer da.free(file_buffer);
-
-    var torrentFile = TorrentFile{
-        .@"creation date" = 0,
-        .announce = &.{},
-        .comment = &.{},
-        .@"created by" = &.{},
-        .info = &.{},
-        .@"url-list" = &.{},
-    };
+        da, "test/debian-12.9.0-amd64-netinst.iso.torrent",
+    ); defer da.free(file_buffer);
+    // zig fmt: on
 
     var parser = Parser.init(file_buffer);
+    var torrentFile: bp.Dto(TorrentFileInfo) = undefined;
     try parser.parseDict(TorrentFileInfo, &torrentFile);
 
-    std.debug.print("#####", .{});
-    std.debug.print("\n\n Torrent File:\n", .{});
-    try data.printTorrentFile(torrentFile);
-
-    var torrent = Torrent{
-        .length = 0,
-        .@"piece length" = 0,
-        .name = &.{},
-        .pieces = &.{},
-    };
+    try testing.expectEqual(1736599700, torrentFile.@"creation date");
+    try testing.expectEqualSlices(u8, "http://bttracker.debian.org:6969/announce", torrentFile.announce);
+    try testing.expectEqualSlices(u8, "\"Debian CD from cdimage.debian.org\"", torrentFile.comment);
+    try testing.expectEqualSlices(u8, "mktorrent 1.1", torrentFile.@"created by");
 
     parser = Parser.init(torrentFile.info);
+    var torrent: bp.Dto(TorrentInfo) = undefined;
     try parser.parseDict(TorrentInfo, &torrent);
 
-    std.debug.print("\n\n Torrent Info:\n", .{});
-    data.printTorrent(torrent);
-
-    std.debug.print("\n#####\n", .{});
+    try testing.expectEqual(662700032, torrent.length);
+    try testing.expectEqual(262144, torrent.@"piece length");
+    try testing.expectEqualSlices(u8, "debian-12.9.0-amd64-netinst.iso", torrent.name);
 }
