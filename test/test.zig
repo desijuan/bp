@@ -24,13 +24,14 @@ const testing = std.testing;
 test "parse debian torrent" {
     const da = testing.allocator;
 
-    // zig fmt: off
-    const file_buffer: []const u8 = try @import("utils.zig").readFile(
-        da, "test/debian-12.9.0-amd64-netinst.iso.torrent",
-    ); defer da.free(file_buffer);
-    // zig fmt: on
+    const buffer: []const u8 = try std.fs.cwd().readFileAlloc(
+        da,
+        "test/debian-12.9.0-amd64-netinst.iso.torrent",
+        std.math.maxInt(usize),
+    );
+    defer da.free(buffer);
 
-    var parser = Parser.init(file_buffer);
+    var parser = Parser.init(buffer);
     var torrentFile: bp.Dto(TorrentFileInfo) = undefined;
     try parser.parseDict(TorrentFileInfo, &torrentFile);
 
