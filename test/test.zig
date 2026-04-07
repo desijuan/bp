@@ -3,7 +3,7 @@ const std = @import("std");
 const bp = @import("bp");
 const Parser = bp.Parser;
 
-pub const TorrentFileInfo = struct {
+const TorrentFileInfo = struct {
     @"creation date": bp.Int,
     announce: bp.String,
     comment: bp.String,
@@ -12,7 +12,7 @@ pub const TorrentFileInfo = struct {
     @"url-list": bp.List,
 };
 
-pub const TorrentInfo = struct {
+const TorrentInfo = struct {
     length: bp.Int,
     @"piece length": bp.Int,
     name: bp.String,
