@@ -14,10 +14,10 @@ inline fn BpType(comptime tag: BencodeType, comptime T: type) type {
     };
 }
 
-pub const Int = BpType(.int, u32);
-pub const String = BpType(.string, []const u8);
-pub const List = BpType(.list, []const u8);
-pub const Dict = BpType(.dict, []const u8);
+pub const Int: type = BpType(.int, i32);
+pub const String: type = BpType(.string, []const u8);
+pub const List: type = BpType(.list, []const u8);
+pub const Dict: type = BpType(.dict, []const u8);
 
 pub fn Dto(comptime T: type) type {
     const struct_info = @typeInfo(T).@"struct";
