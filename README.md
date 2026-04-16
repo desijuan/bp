@@ -90,7 +90,7 @@ const TorrentFile = struct {
 ```
 
 Type mapping:
-- `bp.Int` → integer type (e.g. `u32`)
+- `bp.Int` → `i32`
 - `bp.String` → `[]const u8`
 - `bp.Dict` / `bp.List` → raw slices of encoded data
 
