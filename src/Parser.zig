@@ -1,7 +1,5 @@
 const std = @import("std");
 
-pub const ParseError = std.fmt.ParseIntError;
-
 buf: []const u8,
 i: usize,
 
@@ -14,7 +12,9 @@ pub fn init(buffer: []const u8) Self {
     };
 }
 
-pub fn parseInt(self: *Self) ParseError!u32 {
+pub const ParseError = std.fmt.ParseIntError;
+
+pub fn parseInt(self: *Self) ParseError!i32 {
     if (self.readChar() != 'i') return error.InvalidCharacter;
 
     const j: usize = self.i;
@@ -22,7 +22,7 @@ pub fn parseInt(self: *Self) ParseError!u32 {
     while (self.i < self.buf.len and self.peekChar() != 'e')
         self.i += 1;
 
-    const n: u32 = try std.fmt.parseInt(u32, self.buf[j..self.i], 10);
+    const n: i32 = try std.fmt.parseInt(i32, self.buf[j..self.i], 10);
 
     if (self.readChar() != 'e') return error.InvalidCharacter;
 

@@ -31,11 +31,13 @@ test "parse debian torrent" {
     );
     defer da.free(buffer);
 
-    var parser = Parser.init(buffer);
+    var parser: Parser = undefined;
+
+    parser = Parser.init(buffer);
     var torrentFile: bp.Dto(TorrentFileInfo) = undefined;
     try parser.parseDict(TorrentFileInfo, &torrentFile);
 
-    try testing.expectEqual(1736599700, torrentFile.@"creation date");
+    try testing.expectEqual(@as(i32, 1736599700), torrentFile.@"creation date");
     try testing.expectEqualSlices(u8, "http://bttracker.debian.org:6969/announce", torrentFile.announce);
     try testing.expectEqualSlices(u8, "\"Debian CD from cdimage.debian.org\"", torrentFile.comment);
     try testing.expectEqualSlices(u8, "mktorrent 1.1", torrentFile.@"created by");
@@ -44,7 +46,7 @@ test "parse debian torrent" {
     var torrent: bp.Dto(TorrentInfo) = undefined;
     try parser.parseDict(TorrentInfo, &torrent);
 
-    try testing.expectEqual(662700032, torrent.length);
-    try testing.expectEqual(262144, torrent.@"piece length");
+    try testing.expectEqual(@as(i32, 662700032), torrent.length);
+    try testing.expectEqual(@as(i32, 262144), torrent.@"piece length");
     try testing.expectEqualSlices(u8, "debian-12.9.0-amd64-netinst.iso", torrent.name);
 }
