@@ -20,24 +20,29 @@ pub const List: type = BpType(.list, []const u8);
 pub const Dict: type = BpType(.dict, []const u8);
 
 pub fn Dto(comptime T: type) type {
-    const struct_info = @typeInfo(T).@"struct";
-    comptime var fields: [struct_info.fields.len]std.builtin.Type.StructField = undefined;
-    for (struct_info.fields, 0..) |field, i| {
+    const s_info: std.builtin.Type.Struct = @typeInfo(T).@"struct";
+    const f_len: usize = s_info.fields.len;
+
+    var field_names: [f_len][]const u8 = undefined;
+    var field_types: [f_len]type = undefined;
+    var field_attrs: [f_len]std.builtin.Type.StructField.Attributes = undefined;
+
+    for (s_info.fields, 0..) |field, i| {
         const FieldType: type = @field(field.type, "value_type");
-        fields[i] = std.builtin.Type.StructField{
-            .name = field.name,
-            .type = FieldType,
-            .default_value_ptr = null,
-            .is_comptime = false,
-            .alignment = @alignOf(FieldType),
+
+        field_names[i] = field.name;
+        field_types[i] = FieldType;
+        field_attrs[i] = .{
+            .@"comptime" = false,
+            .@"align" = @alignOf(FieldType),
         };
     }
-    return @Type(std.builtin.Type{
-        .@"struct" = std.builtin.Type.Struct{
-            .layout = .auto,
-            .fields = &fields,
-            .decls = &.{},
-            .is_tuple = false,
-        },
-    });
+
+    return @Struct(
+        .auto,
+        null,
+        &field_names,
+        &field_types,
+        &field_attrs,
+    );
 }

@@ -22,14 +22,17 @@ const TorrentInfo = struct {
 const testing = std.testing;
 
 test "parse debian torrent" {
-    const da = testing.allocator;
+    const ta = testing.allocator;
+    const io = testing.io;
 
-    const buffer: []const u8 = try std.fs.cwd().readFileAlloc(
-        da,
+    const buffer: []const u8 = try std.Io.Dir.readFileAlloc(
+        std.Io.Dir.cwd(),
+        io,
         "test/debian-12.9.0-amd64-netinst.iso.torrent",
-        std.math.maxInt(usize),
+        ta,
+        std.Io.Limit.unlimited,
     );
-    defer da.free(buffer);
+    defer ta.free(buffer);
 
     var parser: Parser = undefined;
 
