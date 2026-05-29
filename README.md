@@ -33,22 +33,45 @@ describing the expected shape of the data. It then fills a corresponding runtime
 that reference the original buffer.
 
 All 4 Bencode types are supported:
-- integer
-- byte string
-- list
-- dictionary
+- integer     --> bp.Int
+- byte string --> bp.String
+- list        --> bp.List
+- dictionary  --> bp.Dict
 
 ---
 
-## Example
+## Example 1
+
+When trying to download a torrent, one has to ask the tracker for a list of peers. This is done via
+a GET request. The tracker responds in bencode format with the following schema:
+```zig
+pub const TrackerResponseInfo = struct {
+    interval: bp.Int,
+    peers: bp.String,
+};
+```
+
+To parse the response we would do:
+```zig
+const res_body = try http.requestPeers();
+defer gpa.free(res_body);
+
+var parser: bp.Parser = undefined;
+parser = bp.Parser.init(res_body);
+
+var trackerResponse: bp.Dto(TrackerResponseInfo) = undefined;
+try parser.parseDict(TrackerResponseInfo, &trackerResponse);
+```
+
+## Example 2
 
 We will parse the torrent file:
-
 `test/debian-12.9.0-amd64-netinst.iso.torrent`
 
 ### 1. Define the schema
 
-Bencode dictionaries are mapped to Zig structs.
+Bencode dictionaries are mapped to Zig structs. The structure of the bencode message should be known
+upfront. In our example we would define our schema the following way:
 
 ```zig
 const TorrentFileInfo = struct {
@@ -64,7 +87,11 @@ const TorrentFileInfo = struct {
 Notes:
 - Field order does not matter (bencode dictionaries are unordered).
 - Keys must match exactly (including spaces, dashes, etc.).
-- The types of the fields must be one of: bp.Dict, bp.List, bp.String and bp.List.
+- The types of the fields must be one of:
+  - bp.Int
+  - bp.String
+  - bp.List
+  - bp.Dict
 
 ---
 
@@ -90,9 +117,9 @@ const TorrentFile = struct {
 ```
 
 Type mapping:
-- `bp.Int` → `i32`
-- `bp.String` → `[]const u8`
-- `bp.Dict` / `bp.List` → raw slices of encoded data
+- `bp.Int`              --> `i32`
+- `bp.String`           --> `[]const u8`
+- `bp.Dict` / `bp.List` --> raw slices of encoded data
 
 ---
 
@@ -110,7 +137,7 @@ After parsing:
 
 ---
 
-### Memory model (important)
+### Memory model
 
 bp does **not** copy data.
 
@@ -118,8 +145,9 @@ All slices in the resulting struct **alias the input buffer**.
 
 This implies:
 
-- The input buffer must remain alive while the parsed data is in use
-- If you need independent ownership, you must copy the data yourself
+- The input buffer must remain alive while the parsed data is in use.
+- The user is responsible of copying the data if ownership is needed.
+
 
 ---
 
