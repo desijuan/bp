@@ -45,7 +45,7 @@ All 4 Bencode types are supported:
 When trying to download a torrent, one has to ask the tracker for a list of peers. This is done via
 a GET request. The tracker responds in bencode format with the following schema:
 ```zig
-pub const TrackerResponseInfo = struct {
+pub const TrackerResponseSchema = struct {
     interval: bp.Int,
     peers: bp.String,
 };
@@ -59,8 +59,8 @@ defer gpa.free(res_body);
 var parser: bp.Parser = undefined;
 parser = bp.Parser.init(res_body);
 
-var trackerResponse: bp.Dto(TrackerResponseInfo) = undefined;
-try parser.parseDict(TrackerResponseInfo, &trackerResponse);
+var trackerResponse: bp.Dto(TrackerResponseSchema) = undefined;
+try parser.parseDict(TrackerResponseSchema, &trackerResponse);
 ```
 
 ## Example 2
@@ -74,7 +74,7 @@ Bencode dictionaries are mapped to Zig structs. The structure of the bencode mes
 upfront. In our example we would define our schema the following way:
 
 ```zig
-const TorrentFileInfo = struct {
+const TorrentFileSchema = struct {
     @"creation date": bp.Int,
     announce: bp.String,
     comment: bp.String,
@@ -100,14 +100,14 @@ Notes:
 The `bp.Dto` function generates the Data Transfer Object that will be used to parse the data:
 
 ```zig
-var torrent_file: bp.Dto(TorrentFileInfo) = undefined;
+var torrent_file: bp.Dto(TorrentFileSchema) = undefined;
 ```
 
 This expands to something equivalent to:
 
 ```zig
 const TorrentFile = struct {
-    @"creation date": u32,
+    @"creation date": i64,
     announce: []const u8,
     comment: []const u8,
     @"created by": []const u8,
@@ -117,7 +117,7 @@ const TorrentFile = struct {
 ```
 
 Type mapping:
-- `bp.Int`              --> `i32`
+- `bp.Int`              --> `i64`
 - `bp.String`           --> `[]const u8`
 - `bp.Dict` / `bp.List` --> raw slices of encoded data
 
@@ -127,7 +127,7 @@ Type mapping:
 
 ```zig
 const parser = Parser.init(buffer);
-try parser.parseDict(TorrentFileInfo, &torrent_file);
+try parser.parseDict(TorrentFileSchema, &torrent_file);
 ```
 
 After parsing:
@@ -158,17 +158,17 @@ Since dictionaries and lists are returned as raw slices, they can be parsed furt
 Example: parsing the `info` field:
 
 ```zig
-const TorrentInfo = struct {
+const TorrentSchema = struct {
     length: bp.Int,
     @"piece length": bp.Int,
     name: bp.String,
     pieces: bp.String,
 };
 
-var torrent: bp.Dto(TorrentInfo) = undefined;
+var torrent: bp.Dto(TorrentSchema) = undefined;
 
 const parser = Parser.init(torrent_file.info);
-try parser.parseDict(TorrentInfo, &torrent);
+try parser.parseDict(TorrentSchema, &torrent);
 ```
 
 ---

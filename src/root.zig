@@ -1,10 +1,11 @@
-const std = @import("std");
-
 const types = @import("types.zig");
-pub const Int: type = types.Int;
-pub const String: type = types.String;
-pub const List: type = types.List;
-pub const Dict: type = types.Dict;
-pub const Dto: fn (comptime T: type) type = types.Dto;
+const BencodeType = types.BencodeType;
 
-pub const Parser = @import("Parser.zig");
+pub const Int: type = BencodeType(.int);
+pub const String: type = BencodeType(.string);
+pub const List: type = BencodeType(.list);
+pub const Dict: type = BencodeType(.dict);
+
+pub const Dto: fn (comptime type) type = types.Dto;
+
+pub const Parser: type = @import("Parser.zig");
