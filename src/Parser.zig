@@ -3,10 +3,10 @@ const std = @import("std");
 buf: []const u8,
 i: usize,
 
-const Self = @This();
+const Parser = @This();
 
-pub fn init(buffer: []const u8) Self {
-    return Self{
+pub fn init(buffer: []const u8) Parser {
+    return Parser{
         .buf = buffer,
         .i = 0,
     };
@@ -14,7 +14,7 @@ pub fn init(buffer: []const u8) Self {
 
 pub const ParseError = std.fmt.ParseIntError;
 
-pub fn parseInt(self: *Self) ParseError!i32 {
+pub fn parseInt(self: *Parser) ParseError!i64 {
     if (self.readChar() != 'i') return error.InvalidCharacter;
 
     const j: usize = self.i;
@@ -22,20 +22,20 @@ pub fn parseInt(self: *Self) ParseError!i32 {
     while (self.i < self.buf.len and self.peekChar() != 'e')
         self.i += 1;
 
-    const n: i32 = try std.fmt.parseInt(i32, self.buf[j..self.i], 10);
+    const n: i64 = try std.fmt.parseInt(i64, self.buf[j..self.i], 10);
 
     if (self.readChar() != 'e') return error.InvalidCharacter;
 
     return n;
 }
 
-pub fn parseStr(self: *Self) ParseError![]const u8 {
+pub fn parseStr(self: *Parser) ParseError![]const u8 {
     const j: usize = self.i;
 
     while (self.i < self.buf.len and self.peekChar() != ':')
         self.i += 1;
 
-    const n: u32 = try std.fmt.parseInt(u32, self.buf[j..self.i], 10);
+    const n: usize = try std.fmt.parseInt(usize, self.buf[j..self.i], 10);
 
     if (self.readChar() != ':') return error.InvalidCharacter;
 
@@ -46,7 +46,7 @@ pub fn parseStr(self: *Self) ParseError![]const u8 {
     return self.buf[k..self.i];
 }
 
-pub fn parseListAsStr(self: *Self) ParseError![]const u8 {
+pub fn parseListAsStr(self: *Parser) ParseError![]const u8 {
     const j: usize = self.i;
 
     if (self.readChar() != 'l') return error.InvalidCharacter;
@@ -70,7 +70,7 @@ pub fn parseListAsStr(self: *Self) ParseError![]const u8 {
     return self.buf[j..self.i];
 }
 
-pub fn parseDictAsStr(self: *Self) ParseError![]const u8 {
+pub fn parseDictAsStr(self: *Parser) ParseError![]const u8 {
     const j: usize = self.i;
 
     if (self.readChar() != 'd') return error.InvalidCharacter;
@@ -97,18 +97,19 @@ pub fn parseDictAsStr(self: *Self) ParseError![]const u8 {
 const Dto = @import("types.zig").Dto;
 
 pub fn parseDict(
-    self: *Self,
-    comptime Info: type,
-    dto: *Dto(Info),
+    self: *Parser,
+    comptime Schema: type,
+    dto: *Dto(Schema),
 ) ParseError!void {
     if (self.readChar() != 'd') return error.InvalidCharacter;
 
     while (self.i < self.buf.len and self.peekChar() != 'e') {
         const key = try self.parseStr();
 
-        inline for (@typeInfo(Info).@"struct".fields) |field|
-            if (std.mem.eql(u8, field.name, key)) {
-                @field(dto, field.name) = switch (comptime field.type.bencode_type) {
+        const si_schema = @typeInfo(Schema).@"struct";
+        inline for (si_schema.field_names, si_schema.field_types) |field_name, field_type|
+            if (std.mem.eql(u8, field_name, key)) {
+                @field(dto, field_name) = switch (comptime field_type.t_bencode) {
                     .int => try self.parseInt(),
                     .string => try self.parseStr(),
                     .list => try self.parseListAsStr(),
@@ -123,7 +124,7 @@ pub fn parseDict(
 }
 
 pub fn printList(buffer: []const u8) ParseError!void {
-    var parser: Self = init(buffer);
+    var parser: Parser = init(buffer);
 
     if (parser.readChar() != 'l') return error.InvalidCharacter;
 
@@ -133,17 +134,17 @@ pub fn printList(buffer: []const u8) ParseError!void {
     if (parser.readChar() != 'e') return error.InvalidCharacter;
 }
 
-fn peekChar(self: Self) u8 {
+fn peekChar(self: Parser) u8 {
     return self.buf[self.i];
 }
 
-fn readChar(self: *Self) u8 {
+fn readChar(self: *Parser) u8 {
     const c: u8 = self.buf[self.i];
     self.i += 1;
     return c;
 }
 
-fn eatWhitespace(self: Self) void {
+fn eatWhitespace(self: Parser) void {
     while (self.i < self.buf.len and std.ascii.isWhitespace(self.peekChar()))
         self.i += 1;
 }

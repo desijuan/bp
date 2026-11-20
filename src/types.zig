@@ -1,48 +1,48 @@
 const std = @import("std");
 
-pub const BencodeType = enum(u2) {
+const EBencodeType = enum(u2) {
     int,
     string,
     list,
     dict,
 };
 
-inline fn BpType(comptime tag: BencodeType, comptime T: type) type {
-    comptime return struct {
-        pub const bencode_type: BencodeType = tag;
-        pub const value_type: type = T;
+///
+/// Type wrapper around EBencodeType
+///
+pub fn BencodeType(comptime eBencodeType: EBencodeType) type {
+    return struct {
+        pub const t_bencode = eBencodeType;
     };
 }
 
-pub const Int: type = BpType(.int, i32);
-pub const String: type = BpType(.string, []const u8);
-pub const List: type = BpType(.list, []const u8);
-pub const Dict: type = BpType(.dict, []const u8);
+pub fn DtoType(comptime eBencodeType: EBencodeType) type {
+    return switch (eBencodeType) {
+        .int => i64,
+        .string => []const u8,
+        .list => []const u8,
+        .dict => []const u8,
+    };
+}
 
-pub fn Dto(comptime T: type) type {
-    const s_info: std.builtin.Type.Struct = @typeInfo(T).@"struct";
-    const f_len: usize = s_info.fields.len;
+///
+/// Takes a struct with fields of type BencodeType and returns a struct
+/// with each field converted via the function DtoType
+///
+pub fn Dto(comptime Schema: type) type {
+    const si_schema = @typeInfo(Schema).@"struct";
+    const len: usize = si_schema.field_names.len;
 
-    var field_names: [f_len][]const u8 = undefined;
-    var field_types: [f_len]type = undefined;
-    var field_attrs: [f_len]std.builtin.Type.StructField.Attributes = undefined;
+    var field_types: [len]type = undefined;
+    var field_attrs: [len]std.builtin.Type.Struct.FieldAttributes = undefined;
 
-    for (s_info.fields, 0..) |field, i| {
-        const FieldType: type = @field(field.type, "value_type");
+    inline for (si_schema.field_types, 0..) |field_type, i| {
+        if (@typeInfo(field_type) != .@"struct" or !@hasDecl(field_type, "t_bencode"))
+            @compileError("Fields must be of type BencodeType");
 
-        field_names[i] = field.name;
-        field_types[i] = FieldType;
-        field_attrs[i] = .{
-            .@"comptime" = false,
-            .@"align" = @alignOf(FieldType),
-        };
+        field_types[i] = DtoType(field_type.t_bencode);
+        field_attrs[i] = .{};
     }
 
-    return @Struct(
-        .auto,
-        null,
-        &field_names,
-        &field_types,
-        &field_attrs,
-    );
+    return @Struct(.auto, null, si_schema.field_names, &field_types, &field_attrs);
 }
