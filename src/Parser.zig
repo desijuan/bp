@@ -106,8 +106,8 @@ pub fn parseDict(
     while (self.i < self.buf.len and self.peekChar() != 'e') {
         const key = try self.parseStr();
 
-        const ti_schema = @typeInfo(Schema).@"struct";
-        inline for (ti_schema.field_names, ti_schema.field_types) |field_name, field_type|
+        const si_schema = @typeInfo(Schema).@"struct";
+        inline for (si_schema.field_names, si_schema.field_types) |field_name, field_type|
             if (std.mem.eql(u8, field_name, key)) {
                 @field(dto, field_name) = switch (comptime field_type.t_bencode) {
                     .int => try self.parseInt(),
